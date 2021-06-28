@@ -1,11 +1,13 @@
 package game2048;
 
+import java.util.ArrayList;
 import java.util.Formatter;
+import java.util.List;
 import java.util.Observable;
 
 
 /** The state of a game of 2048.
- *  @author TODO: Jiayi
+ *  @author Jiayi
  */
 public class Model extends Observable {
     /** Current contents of the board. */
@@ -109,18 +111,119 @@ public class Model extends Observable {
     public boolean tilt(Side side) {
         boolean changed;
         changed = false;
-
+        checkGameOver();
         // TODO: Modify this.board (and perhaps this.score) to account
         // for the tilt to the Side SIDE. If the board changed, set the
         // changed local variable to true.
+        board.startViewingFrom(Side.opposite(side));
+        int size = board.size();
+        for(int i =0; i<size;i++){
+            int[] column_value = get_values(board,i);
+            this.score +=points(column_value);
+            int [] step_list = amount_to_move(column_value);
+            tilt_column(board,i,step_list);
+            for(int num : step_list){
+                changed = changed || num !=0;
+            }
+        }
 
-        checkGameOver();
         if (changed) {
             setChanged();
         }
+        board.startViewingFrom(Side.NORTH);
         return changed;
     }
 
+    /** a helper function that move up the ith column
+     *
+     */
+    public static void tilt_column(Board board, int i,int[] step_list){
+        int size = board.size();
+        for(int j =0;j<size;j++){
+            if(step_list[j]==0){
+                continue;
+            }
+            board.move(i,j-step_list[j],board.tile(i,j));
+        }
+    }
+
+    //get the value of the ith column of a board
+    private static int[] get_values(Board board, int i){
+        int size = board.size();
+        int[] column = new int[size];
+        for(int j=0;j<size;j++){
+            if(board.tile(i,j) !=null){
+                column[j] = board.tile(i,j).value();
+            }
+            else{
+                column[j]=0;
+            }
+        }
+        return column;
+    }
+    private static int points(int [] array){
+        int point =0 ;
+        int start =0;
+        int end =1;
+        while(end <array.length){
+            if(array[start]==0){
+                start++;
+                end =start+1;
+            }
+            else if (array[end] ==0){
+                end++;
+            }
+            else if(array[start]==array[end]){
+                point+=2*array[start];
+                start = end+1;
+                end =start +1;
+            }
+            else{
+                start = end;
+                end =start +1;
+            }
+        }
+        return point;
+    }
+    private static boolean exist_block_to_merge(int index, int[] array){
+        for(int j = index+1;j<array.length;j++){
+            if (array[j] != 0){
+                return array[index]==array[j];
+            }
+        }
+        return false;
+
+    }
+    private static int next_not_zero_block (int[] array,int index){
+        for (int j = index+1;j<array.length;j++){
+            if(array[j]!=0){
+                return j;
+            }
+
+        }
+        return 0;
+    }
+    private static int[] amount_to_move(int[] column){
+       int[] result = new int[column.length];
+       int count =0;                        // how many tiles are empty
+       for(int i=0;i<column.length;i++){
+           if(column[i]==0){
+               result[i]=0;
+               count ++;
+           }
+           else if(i != column.length-1 && exist_block_to_merge(i,column)){
+               int index = next_not_zero_block(column,i);
+               result[i] = count;
+               count+= index-i;
+               result[index] = count;
+               i=index;
+           }
+           else{
+               result[i]= count;
+           }
+       }
+       return result;
+    }
     /** Checks if the game is over and sets the gameOver variable
      *  appropriately.
      */

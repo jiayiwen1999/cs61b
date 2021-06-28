@@ -107,4 +107,13 @@ public class TestUpOnly extends TestUtils {
         checkChanged(Side.NORTH, true, changed);
         checkModel(after, 4, 0, prevBoard, Side.NORTH);
     }
+
+    //@Test
+    /** test helper function pairs
+     *
+
+    public void testPair(){
+        int[] input =
+     }
+     */
 }
